@@ -1,10 +1,13 @@
 import socket
+from utils import ServerStates
+import utils
 
  # The server itself that will run the Pokémon battle simulator
 class Server(object):
 
     def __init__(self):
         # Build and start the server
+        self.state = ServerStates.CLOSED
 
         # Init some variables
         self.clientList = {}
@@ -26,7 +29,8 @@ class Server(object):
         # Listen for connections
         self.listeningSocket.listen(1)
 
-        # Set the server state
+        # Set the server state to listening
+        self.state = ServerStates.LISTEN
 
         print ("CLIDown server started...")
 
