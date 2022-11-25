@@ -8,5 +8,5 @@ class ServerStates(Enum):
 class GameStates(Enum):
     BATTLE_START, ACCEPT_COMMANDS, \
     CALCULATE_RESULT, DISPLAY_RESULT, \
-    END_BATTLE = RANGE (1,5)
+    END_BATTLE = range(1,5)
 
