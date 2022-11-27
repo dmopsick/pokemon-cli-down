@@ -5,6 +5,11 @@ import select
 import client
 import time
 
+# Actual IP to use for the app
+# TELNET_IP = "0.0.0.0" # Wildcard to listen on any port possible
+TELNET_IP = "127.0.0.1" # Local IP address for testing locally on one machine
+TELNET_PORT = 1234
+
  # The server itself that will run the Pokémon battle simulator
 class Server(object):
 
@@ -24,7 +29,7 @@ class Server(object):
 
         # Define a address and port to listen on
         # Telnet standard port 23, this project using different port to avoid potential permission issues
-        self.listeningSocket.bind(("0.0.0.0", 1234))
+        self.listeningSocket.bind((TELNET_IP, TELNET_PORT))
         
         # Set to non blocking mode to not wait for connection
         self.listeningSocket.setblocking(False)
@@ -36,6 +41,7 @@ class Server(object):
         self.state = ServerStates.LISTEN
 
         print ("CLIDown server started...")
+        print("Listening at " + TELNET_IP + ":" + str(TELNET_PORT))
 
     def update(self):
         pass
@@ -63,13 +69,6 @@ class Server(object):
             # Increment the nextClientId in preperation of the next client
             self.nextClientId += 1
 
-            # Check to see if there are now two clients
-            if len(self.clientList) == 2:
-                # If so the connections have been established and the battle can begin
-                self.state = utils.ServerStates.ESTAB
-            elif len(self.clientList) > 2:
-                print("WARNING: There are " + str(len(self.clientList)) + " connections detected.")
-        
         else:
             # There is not data to be read at this time at the socket we are listening on
             print("NO DATA AVAILABLE TO READ")

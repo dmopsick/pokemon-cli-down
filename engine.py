@@ -3,29 +3,39 @@
 
 from server import Server
 from utils import ServerStates, GameStates
+import time
 
 # Start the server
 server = Server()
 
 while True:
-    # Perhaps pause the loop 
-    
+    # Wait a quarter of a second before executing the loop once more
+    time.sleep(.25)    
+
     # Determine what to do based on the state of the server
     if server.state == ServerStates.CLOSED:
         # The server is closed, let's set it to listening
         server.state = ServerStates.LISTEN
     elif server.state == ServerStates.LISTEN:
         # Need to listen until there are 2 clients connected 
+        server.checkNewConnections()
 
-        # Connect to the client
+        # Check to see if there are now two clients
+        if len(server.clientList) == 2:
+            # If so the connections have been established and the battle can begin
+            server.state = ServerStates.ESTAB
 
-        # Check if there is now two clients connected
+            # Let both of the users know that a connection with two clients has been established
 
-        # If there is only one client connected, give a message to the client telling him to please wait
-
-        # When there are two clients connected, the connection is established and the game begins
-
-        pass
+        elif len(server.clientList) == 1:
+            # Give a message to the one client telling them they are connected but must wait for a second client to connect
+            pass
+        elif len(server.clientList) > 2:
+            print("WARNING: There are " + str(len(server.clientList)) + " connections detected.")
+        else:
+            print("No clients are connected to the server")
+            pass
+        
     elif server.state == ServerStates.ESTAB:
         # The two clients have established their connection to the server
 
