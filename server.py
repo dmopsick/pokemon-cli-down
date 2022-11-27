@@ -10,6 +10,8 @@ import time
 TELNET_IP = "127.0.0.1" # Local IP address for testing locally on one machine
 TELNET_PORT = 1234
 
+TELNET_NEW_LINE = "\n\r"
+
  # The server itself that will run the Pokémon battle simulator
 class Server(object):
 
@@ -69,8 +71,18 @@ class Server(object):
             # Log the connection made
             print("New connection established with Client Id " + str(self.nextClientId) + " at address " + str(addr[0]) + ". At this time the client is Player " + str(len(self.clientList)) + ".")
 
-            # Give a message to the one client telling them they are connected but must wait for a second client to connect
+            # Write the message to tell the player that they have connected to the server successfully 
+            newUserMessage = "You have succesfully connected to Pokemon CLI Down! You are player Id: " + str(self.nextClientId)
 
+            # Give a message to the one client telling them they are connected but must wait for a second client to connect
+            self.sendMessageToClientById(self.nextClientId, newUserMessage)
+
+            # Check if the player we have added above is the first player, if so let them know we are waiting for another player to connect
+            if len(self.clientList) == 1:
+                waitingMessage = "Waiting for a second Trainer to connect to begin the battle."
+
+                self.sendMessageToClientById(self.nextClientId, waitingMessage)
+            
             # Increment the nextClientId in preperation of the next client
             self.nextClientId += 1
 
@@ -79,5 +91,23 @@ class Server(object):
             print("NO DATA AVAILABLE TO READ")
             return
         pass
+
+    def sendMessageToClientById(self, clientId, message):
+        # Add new line to end of the message for printing neater
+        message = message + TELNET_NEW_LINE
+
+        try:
+            # Load the client we are going to send the message to
+            clientToSendMessageTo = self.clientList[clientId]
+
+            clientToSendMessageTo.socket.sendall(bytearray(message, "latin1"))
+
+            print("Message sent to Client Id: " + str(clientId))
+        except KeyError:
+            print("ERROR: Attempting to send message to client that does not exist with Id: " + str(clientId))
+        except socket.error:
+            # Disconnect the socket if something goes wrong
+            print("ERROR: Unable to send to socket associated with client Id: " + str(clientId))
+            pass 
 
     
