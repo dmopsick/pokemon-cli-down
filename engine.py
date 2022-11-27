@@ -28,9 +28,11 @@ while True:
             # Let both of the users know that a connection with two clients has been established
              
         elif len(server.clientList) == 1:
+            print("1 client is connected to the server")
             pass
         elif len(server.clientList) > 2:
             print("WARNING: There are " + str(len(server.clientList)) + " connections detected.")
+            pass
         else:
             print("No clients are connected to the server")
             pass
@@ -38,6 +40,14 @@ while True:
     elif server.state == ServerStates.ESTAB:
         # The two clients have established their connection to the server
         print("Time for the game loop to begin")
+
+        # Let each player know that an opponent has been found and the battle will begin
+        for _client in server.clientList:
+            # Build the opponent found message
+            opponentFoundMessage = "An opponent has been found! The battle will begin now..."
+
+            # Send the message telling them an opponent has been found
+            server.sendMessageToClientById(_client, opponentFoundMessage)
 
         # Game loop
         while True:

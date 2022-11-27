@@ -63,7 +63,7 @@ class Server(object):
             acceptedSocket.setblocking(False)
 
             # Construct new client object
-            createdClient = client.Client(acceptedSocket, addr, '', time.time())
+            createdClient = client.Client(self.nextClientId, acceptedSocket, addr, '', time.time())
 
             # Add the object to the server's list of clients
             self.clientList[self.nextClientId] = createdClient
@@ -72,7 +72,7 @@ class Server(object):
             print("New connection established with Client Id " + str(self.nextClientId) + " at address " + str(addr[0]) + ". At this time the client is Player " + str(len(self.clientList)) + ".")
 
             # Write the message to tell the player that they have connected to the server successfully 
-            newUserMessage = "You have succesfully connected to Pokemon CLI Down! You are player Id: " + str(self.nextClientId)
+            newUserMessage = "You have succesfully connected to Pokemon CLIDown! You are player Id: " + str(self.nextClientId)
 
             # Give a message to the one client telling them they are connected but must wait for a second client to connect
             self.sendMessageToClientById(self.nextClientId, newUserMessage)
@@ -88,9 +88,8 @@ class Server(object):
 
         else:
             # There is not data to be read at this time at the socket we are listening on
-            print("NO DATA AVAILABLE TO READ")
+            # print("NO DATA AVAILABLE TO READ")
             return
-        pass
 
     def sendMessageToClientById(self, clientId, message):
         # Add new line to end of the message for printing neater
