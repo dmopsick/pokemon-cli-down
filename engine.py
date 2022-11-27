@@ -26,9 +26,8 @@ while True:
             server.state = ServerStates.ESTAB
 
             # Let both of the users know that a connection with two clients has been established
-
+             
         elif len(server.clientList) == 1:
-            # Give a message to the one client telling them they are connected but must wait for a second client to connect
             pass
         elif len(server.clientList) > 2:
             print("WARNING: There are " + str(len(server.clientList)) + " connections detected.")
@@ -38,6 +37,7 @@ while True:
         
     elif server.state == ServerStates.ESTAB:
         # The two clients have established their connection to the server
+        print("Time for the game loop to begin")
 
         # Game loop
         while True:

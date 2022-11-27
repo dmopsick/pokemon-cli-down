@@ -61,11 +61,16 @@ class Server(object):
             acceptedSocket.setblocking(False)
 
             # Construct new client object
-            client = client.Client(acceptedSocket, addr, '', time.time())
+            createdClient = client.Client(acceptedSocket, addr, '', time.time())
 
             # Add the object to the server's list of clients
-            self.clientList[self.nextClientId] = client
+            self.clientList[self.nextClientId] = createdClient
             
+            # Log the connection made
+            print("New connection established with Client Id " + str(self.nextClientId) + " at address " + str(addr[0]) + ". At this time the client is Player " + str(len(self.clientList)) + ".")
+
+            # Give a message to the one client telling them they are connected but must wait for a second client to connect
+
             # Increment the nextClientId in preperation of the next client
             self.nextClientId += 1
 
