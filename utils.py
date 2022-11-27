@@ -3,10 +3,10 @@ from enum import Enum
 # Hold the states that the engine will use to determine  
 class ServerStates(Enum):
     CLOSED, LISTEN,\
-    ESTAB = range(1, 3)
+    ESTAB, FIN = range(1, 4)
 
 class GameStates(Enum):
     BATTLE_START, ACCEPT_COMMANDS, \
     CALCULATE_RESULT, DISPLAY_RESULT, \
-    END_BATTLE = range(1,5)
+    END_BATTLE, CLOSED= range(1,6)
 
