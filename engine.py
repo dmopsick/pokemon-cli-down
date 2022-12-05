@@ -62,6 +62,22 @@ def sendMessageToBothPlayers(message):
     for id, player in enumerate(playerList):
         server.sendMessageToClientById(player.clientId, message)
 
+def playerHasRemainingPokemon(player):
+    result = False
+
+    # Check for at least one Pokemon in the player's team with remaining HP
+    for id, pokemon in player.pokemonTeam:
+        if pokemon.currentHp > 0:
+            result=True
+
+    return result
+
+def executePlayerOneAttack():
+    pass
+
+def executePlayerTwoAttack():
+    pass
+
 # Based on limited time and the focus of this project being the networking purposes, for the time being hardcode the Pokemon for the two players
 def hardCodeTestValues():
     # Create some moves for the Pokemon to use
@@ -323,10 +339,8 @@ while True:
                 # Check which active Pokemon has a higher speed stat, they move first
                 if playerList[0].activePokemon.speed > playerList[1].activePokemon.speed:
                     # Player 1 has the faster Pokémon so they will go first
-
                     # Announce to both players what move has been used
                     sendMessageToBothPlayers("{} uses {}!".format(playerList[0].activePokemon.speciesName, playerList[0].mostRecentMoveCommand))
-
                     time.sleep(0.5)
 
                     # Select a random int from 1-100 for accuracy check
@@ -345,7 +359,7 @@ while True:
                         # The move missed -- No damage will be done 
                         # Announce to both players what move has been used
                         sendMessageToBothPlayers("{} avoided the attack!".format(playerList[1].activePokemon.speciesName))
-
+                        time.sleep(.5)
                     # Decrement the PP of the used move on the attacking active Pokemon
                     for id, move in playerList[0].activePokemon.moveList:
                         if move.id == playerList[0].mostRecentMoveCommand.id:
@@ -358,14 +372,23 @@ while True:
 
                     # Does the defending Pokemon have any remaining hp?
                     if (playerList[1].activePokemon.currentHp > 0):
-                        pass
+                        sendMessageToBothPlayers("{} received {} points of damage! {} has {} HP remaining".format(playerList[1].activePokemon.speciesName, damage, playerList[1].activePokemon.speciesName, playerList[1].activePokemon.currentHp))
+                        time.sleep(.5)
+
+
+                        # Yes? Time for second attack
+
                     else:
                         playerList[1].activePokemon.currentHp = 0
+                         # Let the players know 
+                        sendMessageToBothPlayers("{} has been knocked out by the attack!")
+                        time.sleep(0.5)
+                       
 
-
-                    # Yes? Time for second attack
-
-                    # No? Check if the defending player has any other remaining Pokemon
+                    # Check if the defending player has any other remaining Pokemon
+                    if playerHasRemainingPokemon(playerList[1]) == False:
+                        gameState = GameStates.END_BATTLE
+                        playerList[0].battleWinner = True
                     
                 else:
                     # Player 2 has the faster Pokémon so they will go first
@@ -379,14 +402,6 @@ while True:
                     # Perform the second attack
 
                     pass
-            elif gameState == GameStates.DISPLAY_RESULT:
-                # Display the Results of the turn to the user
-
-                # Determine if the battle will continue
-                # Battle will continue Set the state to ACCEPT_COMMANDS
-
-                # Battle has met an end condition, set to END_BATTLE
-                pass
             elif gameState == GameStates.END_BATTLE:
                 pass
             else:
