@@ -4,12 +4,24 @@
 from server import Server
 from utils import ServerStates, GameStates
 import time
+from player import Player
 
 # Start the server
 server = Server()
 
+# Hold the player info
+playerList = []
+
 # Init the game state
 gameState = GameStates.CLOSED
+
+def getPlayerByClientId(clientId):
+    foundPlayer = None
+
+    for playerId, player in enumerate(playerList):
+        if player.clientId == clientId:
+            foundPlayer = player
+    return foundPlayer
 
 while True:
     # Wait a quarter of a second before executing the loop once more
@@ -21,7 +33,18 @@ while True:
         server.state = ServerStates.LISTEN
     elif server.state == ServerStates.LISTEN:
         # Need to listen until there are 2 clients connected 
-        server.checkNewConnections()
+        server.update()
+
+        for id, event in enumerate(server.getNewPlayers()):
+            print("Flag 1")
+
+            # Create new player record 
+            newPlayer = Player(id, event.clientId, None, None)
+
+            # Add to the map of players
+            playerList.append(newPlayer)
+
+            print("FLAG 20 adding new player Id " + str(newPlayer.id) + " with client Id " + str(newPlayer.clientId))
 
         # Check to see if there are now two clients
         if len(server.clientList) == 2:
@@ -70,39 +93,35 @@ while True:
                         # print("Name command received ")
                         clientIndex = server.getClientIndexById(event.clientId)
 
-                        # print("Flag 12 " + str(clientIndex))
+                        player = getPlayerByClientId(event.clientId)
 
                         # Updating by index will be problematic for running after the first two clients
-                        server.clientList[clientIndex].name = event.params
-                        print("Client " + str(event.clientId) + " name is now: " + server.clientList[clientIndex].name)
+                        player.name = event.params
+                        print("Client " + str(event.clientId) + " name is now: " + player.name)
             
-            # print("Flag 10")
-            # print(server.clientList[0].name)
-            # print(server.clientList[1].name)
 
-            if server.clientList[0].name != None and server.clientList[1].name != None:
-                print("Both players have entered their name: " + server.clientList[0].name + " and " + server.clientList[1].name)
+            if playerList[0].name != None and playerList[1].name != None:
+                print("Both players have entered their name: " + playerList[0].name + " and " + playerList[1].name)
                 bothPlayersEnteredName = True
 
             pass
 
         # Set opponent names for the clients
-        server.clientList[0].opponentName = server.clientList[1].name
-        server.clientList[1].opponentName = server.clientList[0].name
+        playerList[0].opponentName = playerList[1].name
+        playerList[1].opponentName = playerList[0].name
         
-        for id, _client in list(server.clientList.items()):
-            opponentName = str(_client.opponentName).strip()
+        for id, player in enumerate(playerList):
+            # Must strip out any spaces or new lines
+            opponentName = str(player.opponentName).strip()
             print("Flag 18")
             print(opponentName)
 
             # Build the opponent found message
-            # opponentFoundMessage = "An opponent has been found! {} has challenged you to a battle!".format(_client.opponentName) 
             opponentFoundMessage = "An opponent has been found! {} has challenged you to a battle!".format(opponentName)
-            print("Flag 17")
             print(opponentFoundMessage)
 
             # Send the message telling them an opponent has been found
-            server.sendMessageToClientById(_client.id, opponentFoundMessage)
+            server.sendMessageToClientById(player.clientId, opponentFoundMessage)
 
         # Game loop
         while True:

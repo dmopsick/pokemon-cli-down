@@ -63,6 +63,9 @@ class Server(object):
         print("Listening at " + TELNET_IP + ":" + str(TELNET_PORT))
 
     def update(self):
+        # Check for new connected clients
+        self.checkNewConnections()
+
         # Check if one or more clients disconnected
         
         # Check for any new messages from the clients to be processed as commands
@@ -120,6 +123,12 @@ class Server(object):
             # Write the message to tell the player that they have connected to the server successfully 
             newUserMessage = "You have succesfully connected to Pokemon CLIDown! You are player Id: " + str(createdClient.id)
 
+            # Create a new player event
+            newPlayerEvent = Event(Event._EVENT_NEW_PLAYER, createdClient.id, None, None)
+
+            # Add the event we just made to the list of new events
+            self.newEventList.append(newPlayerEvent)
+
             # Give a message to the one client telling them they are connected but must wait for a second client to connect
             self.sendMessageToClientById(createdClient.id, newUserMessage)
 
@@ -144,8 +153,8 @@ class Server(object):
         # Add new line to end of the message for printing neater
         message = message + TELNET_NEW_LINE
 
-        print("Flag 16")
-        print(message)
+        # print("Flag 16")
+        # print(message)
 
         clientIndex = self.getClientIndexById(clientId)
 
@@ -243,6 +252,17 @@ class Server(object):
                     readState = self._READ_STATE_NORMAL
 
         return processedMessage
+
+
+    def getNewPlayers(self):
+        newPlayerEventList = []
+        for id, event in enumerate(self.eventList):
+            if event.eventType == Event._EVENT_NEW_PLAYER:
+                newPlayerEventList.append(event)
+            
+        return newPlayerEventList
+
+    # Helper functions
 
     def getListOfClientIds(self):
         clientIdList = []
