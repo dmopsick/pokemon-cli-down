@@ -3,7 +3,7 @@ class Pokemon:
 
     def __init__(self, id, speciesName, nickname, \
     level, maxHp, attack, defense, \
-        spAtk, spDef, speed, movesList, typeList, \
+        spAtk, spDef, speed, moveList, typeList, \
         currentHp):
         self.id = id
         self.speciesName = speciesName
@@ -15,6 +15,6 @@ class Pokemon:
         self.spAtk = spAtk
         self.spDef = spDef
         self.speed = speed
-        self.movesList = movesList
+        self.moveList = moveList
         self.typeList = typeList
         self.currentHp = currentHp
