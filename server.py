@@ -79,10 +79,15 @@ class Server(object):
         commandList = []
 
         # Iterate through the list of events 
-        for event in self.eventList:
+        for id, event in enumerate(self.eventList):
+            print("Flag 5")
+            print(event.command + " " + event.params)
             # If the event is command, add it to the command list
             if event.eventType == Event._EVENT_COMMAND:
                 commandList.append(event)
+
+        # print("Flag 4")
+        # print(commandList)
 
         return commandList
 
@@ -101,7 +106,7 @@ class Server(object):
             acceptedSocket.setblocking(False)
 
             # Construct new client object
-            createdClient = client.Client(self.nextClientId, acceptedSocket, addr, '', time.time(), None)
+            createdClient = client.Client(self.nextClientId, acceptedSocket, addr, '', time.time(), None, None)
 
             # Add the object to the server's list of clients
             self.clientList[self.nextClientId] = createdClient
@@ -123,11 +128,6 @@ class Server(object):
                 waitingMessage = "Waiting for a second Trainer to connect to begin the battle."
 
                 self.sendMessageToClientById(createdClient.id, waitingMessage)
-            
-            # Ask the player to enter their name
-            namePrompt = "Please enter your name: "
-            self.sendMessageToClientById(createdClient.id, namePrompt)
-
         else:
             # There is not data to be read at this time at the socket we are listening on
             # print("NO DATA AVAILABLE TO READ")
@@ -160,7 +160,12 @@ class Server(object):
 
     def receiveMessagesFromClients(self):
         # Iterate through each of the clients currently connected
-        for _client in list(self.clientList.items()):
+        for id, _client in list(self.clientList.items()):
+            # _client = self.clientList[clientId]
+
+            # print("Flag 2")
+            # print(_client.id)
+
             # Get the list of data to read 
             rlist, wrlist, xlist = select.select([_client.socket], [], [], 0)
 
@@ -233,3 +238,29 @@ class Server(object):
                     readState = self._READ_STATE_NORMAL
 
         return processedMessage
+
+    def getListOfClientIds(self):
+        clientIdList = []
+
+        for id, client in list(self.clientList.items()):
+            # Make sure to cast Ids as ints for equality
+            clientIdList.append(int(client.id))
+        
+        return clientIdList
+
+    def commandFromValidClient(self, clientId):
+        validCommand = False
+        
+        if clientId == self.clientList[0].id or clientId == self.clientList[1].id:
+            validCommand = True
+
+        return validCommand
+
+    def getClientIndexById(self, clientId):
+        index = -1
+
+        for id, client in list(self.clientList.items()):
+            if clientId == client.id:
+                index = id
+                
+        return index 
