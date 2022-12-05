@@ -39,7 +39,7 @@ def hardCodeTestValues():
     # Create some moves for the Pokemon to use
     tackle = Move(1, 'Tackle', 'Normal', 35, 35, 40, 100)
     scratch = Move(2, 'Scratch', 'Normal', 35, 35, 40, 100)
-    razorLeaf = Move(3, 'Razor Leaf', 'Grass', 25, 55, 95)
+    razorLeaf = Move(3, 'Razor Leaf', 'Grass', 25, 25, 55, 95)
     bite = Move(4, 'Bite', 'Dark', 25, 25, 60, 100)
     vineWhip = Move(5, 'Vine Whip', 'Grass', 25, 25, 45, 100)
     headbutt = Move(6, 'Headbutt', 'Normal', 15, 15, 70, 100)
@@ -152,7 +152,6 @@ while True:
                     if server.commandFromValidClient(event.clientId):
                         # Only processing name commands at this time
                         if event.command == "name":
-                            # print("Name command received ")
                             clientIndex = server.getClientIndexById(event.clientId)
 
                             player = getPlayerByClientId(event.clientId)
@@ -189,9 +188,7 @@ while True:
                 for id, player in enumerate(playerList):
                     # Must strip out any spaces or new lines
                     opponentName = str(player.opponentName).strip()
-                    # print("Flag 18")
-                    # print(opponentName)
-
+        
                     # Build the opponent found message
                     opponentFoundMessage = "An opponent has been found! {} has challenged you to a battle!".format(opponentName)
                     print(opponentFoundMessage)
@@ -203,19 +200,56 @@ while True:
                     opposingTrainer = getPlayerByPlayerId(player.opponentId)
 
                     # Tell the player what Pokemon their opponent sends out
-                    opponentPokemonMessage = "Opponent {} sends out {}.".format(opposingTrainer.name, opposingTrainer.activePokemon)
+                    opponentPokemonMessage = "Opponent {} sends out {}.".format(opposingTrainer.name, opposingTrainer.activePokemon.speciesName)
                     server.sendMessageToClientById(player.clientId, opponentPokemonMessage)
 
                     # Tell the player what Pokemon they send out
-                    trainerPokemonMessage = "You send out {}. Go {}!".format(player.activePokemon. player.activePokemon)
-                    server.sendMessageToClientById(player.clientId, opponentPokemonMessage)
+                    trainerPokemonMessage = "You send out {}. Go {}!".format(player.activePokemon.speciesName, player.activePokemon.speciesName)
+                    server.sendMessageToClientById(player.clientId, trainerPokemonMessage)
 
                     # Change state
-                    gameState = GameStates.ACCEPT_COMMANDS
+                    gameState = GameStates.DISPLAY_COMMANDS
+                pass
+            elif gameState == GameStates.DISPLAY_COMMANDS:
+                # Let the user know the current status of their Pokemon and the opposing Pokemon
+                for id, player in enumerate(playerList):
+                    # Load the oppsoing trainer so you can load their active Pokemon
+                    opposingTrainer = getPlayerByPlayerId(player.opponentId)
+
+                    # Tell the player the current status, HP of their opponent's Pokemon
+                    opponentPokemonStatusMessage = "{0}'s Level {1} {2} has {3} / {4} HP remaining.".format(opposingTrainer.name, str(opposingTrainer.activePokemon.level), opposingTrainer.activePokemon.speciesName, \
+                        opposingTrainer.activePokemon.currentHp, str(opposingTrainer.activePokemon.maxHp))
+                    server.sendMessageToClientById(player.clientId, opponentPokemonStatusMessage)
+
+                    # Tell the player the current status, HP of their Pokemon
+                    playerPokemonStatusMessage = "Your Level {} {} has {} / {} HP remaining.".format(player.activePokemon.level, player.activePokemon.speciesName, \
+                        player.activePokemon.currentHp, player.activePokemon.maxHp)
+                    server.sendMessageToClientById(player.clientId, playerPokemonStatusMessage)
+
+                    # Let the user know what moves are available to them at this time
+                    playerMovesOptionsMessage = "Select a move to use. This is done by using the `move` command and the number of the move you wish to use. Ex: `move 1`\n"
+
+                    for id, move in enumerate(player.activePokemon.movesList):
+                        # Show the move Id as + one because humans start counting at + 1
+                        # Make sure to do minus 1 when reading the commands
+                        playerMovesOptionsMessage += "{}. {} ({} type) - {}/{} pp\n".format((id + 1), move.name, move.type, move.currentPp, move.maxPp)
+                    server.sendMessageToClientById(player.clientId, playerMovesOptionsMessage)
+
+                # We have displayed the info, now we must wait and get user input for the moves
+                gameState = GameStates.ACCEPT_COMMANDS
                 pass
             elif gameState == GameStates.ACCEPT_COMMANDS:
                 # Accept commands from the players for this turn 
-                pass
+                for eventId, event in enumerate(server.getCommands()):
+
+                    pass
+
+                # Check if both players have given a command this turn
+                if playerList[0].mostRecentMoveCommand != None and playerList[1].mostRecentMoveCommand != None:
+                    # Let both users know that moves have been made
+
+
+                    gameState = GameStates.CALCULATE_RESULT
             elif gameState == GameStates.CALCULATE_RESULT:
                 # Determine the results of this turn
                 pass

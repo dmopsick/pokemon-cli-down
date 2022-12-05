@@ -7,14 +7,14 @@ class Pokemon:
         currentHp):
         self.id = id
         self.speciesName = speciesName
-        self.nickname = nickname,
-        self.level = level,
-        self.maxHp = maxHp,
-        self.attack = attack,
-        self.defense = defense,
-        self.spAtk = spAtk,
-        self.spDef = spDef,
-        self.speed = speed,
-        self.movesList = movesList,
-        self.typeList = typeList,
+        self.nickname = nickname
+        self.level = level
+        self.maxHp = maxHp
+        self.attack = attack
+        self.defense = defense
+        self.spAtk = spAtk
+        self.spDef = spDef
+        self.speed = speed
+        self.movesList = movesList
+        self.typeList = typeList
         self.currentHp = currentHp

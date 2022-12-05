@@ -8,3 +8,4 @@ class Player:
         self.opponentId = None
         self.pokemonTeam = None
         self.activePokemon = None
+        self.mostRecentMoveCommand = None
