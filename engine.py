@@ -5,6 +5,8 @@ from server import Server
 from utils import ServerStates, GameStates
 import time
 from player import Player
+from move import Move
+from pokemon import Pokemon
 
 # Start the server
 server = Server()
@@ -18,10 +20,70 @@ gameState = GameStates.CLOSED
 def getPlayerByClientId(clientId):
     foundPlayer = None
 
-    for playerId, player in enumerate(playerList):
+    for id, player in enumerate(playerList):
         if player.clientId == clientId:
             foundPlayer = player
     return foundPlayer
+
+def getPlayerByPlayerId(playerId):
+    foundPlayer = None
+
+    for id, player in enumerate(playerList):
+        if playerId == player.id:
+            foundPlayer = player
+
+    return foundPlayer
+
+# Based on limited time and the focus of this project being the networking purposes, for the time being hardcode the Pokemon for the two players
+def hardCodeTestValues():
+    # Create some moves for the Pokemon to use
+    tackle = Move(1, 'Tackle', 'Normal', 35, 35, 40, 100)
+    scratch = Move(2, 'Scratch', 'Normal', 35, 35, 40, 100)
+    razorLeaf = Move(3, 'Razor Leaf', 'Grass', 25, 55, 95)
+    bite = Move(4, 'Bite', 'Dark', 25, 25, 60, 100)
+    vineWhip = Move(5, 'Vine Whip', 'Grass', 25, 25, 45, 100)
+    headbutt = Move(6, 'Headbutt', 'Normal', 15, 15, 70, 100)
+
+    # Set the move list for Treeko
+    treekoMoveList = []
+    treekoMoveList.append(scratch)
+    treekoMoveList.append(razorLeaf)
+    treekoMoveList.append(vineWhip)
+
+    # Set the type list for Treeko
+    treekoTypeList = []
+    treekoTypeList.append('Grass')
+
+    # Set the move list for Bidoof
+    bidoofMoveList = []
+    bidoofMoveList.append(tackle)
+    bidoofMoveList.append(bite)
+    bidoofMoveList.append(headbutt)
+
+    # Set the type list for Bidoof
+    bidoofTypeList = []
+    bidoofTypeList.append('Normal')
+
+    # Player 1 will get Treeko, my favorite Pokemon
+    treeko = Pokemon(1, 'Treeko', None, 5, 20, 9, 9, 12, 11, 13, treekoMoveList, treekoTypeList, 20)
+
+    # Player 2 will get Bidoof 
+    bidoof = Pokemon(2, 'Bidoof', None, 5, 21, 10, 8, 8, 10, 10, bidoofMoveList, bidoofTypeList, 21)
+
+    # Build Player 1 team
+    player1Team = []
+    player1Team.append(treeko)
+
+    # Build Player 2 team
+    player2Team = []
+    player2Team.append(bidoof)
+
+    # Assign Player 1 their Pokemon team
+    playerList[0].pokemonTeam = player1Team
+
+    # Assign Player 2 their Pokemon team
+    playerList[1].pokemonTeam = player2Team
+    
 
 while True:
     # Wait a quarter of a second before executing the loop once more
@@ -36,15 +98,13 @@ while True:
         server.update()
 
         for id, event in enumerate(server.getNewPlayers()):
-            print("Flag 1")
-
             # Create new player record 
-            newPlayer = Player(id, event.clientId, None, None, None)
+            newPlayer = Player(id, event.clientId, None)
 
             # Add to the map of players
             playerList.append(newPlayer)
 
-            print("FLAG 20 adding new player Id " + str(newPlayer.id) + " with client Id " + str(newPlayer.clientId))
+            print("Flag 20 adding new player Id " + str(newPlayer.id) + " with client Id " + str(newPlayer.clientId))
 
         # Check to see if there are now two clients
         if len(server.clientList) == 2:
@@ -83,6 +143,8 @@ while True:
             # Check for messages/disconnects
             server.update()
 
+            # Accept names of the players. 
+            # At this point in the future could also allow players to select which Pokemon to use
             if gameState == GameStates.ACCEPT_NAMES:
                 # Check commands 
                 for eventId, event in enumerate(server.getCommands()):
@@ -114,14 +176,21 @@ while True:
 
                     gameState = GameStates.BATTLE_START
 
+                    # For testing purposes for the final project, hard code both players Pokemon teams
+                    hardCodeTestValues()
+                    
+                    # Set player 1 and player 2 active Pokemon
+                    playerList[0].activePokemon = playerList[0].pokemonTeam[0]
+                    playerList[1].activePokemon = playerList[1].pokemonTeam[0]
+
                     print("Both players have entered their name: " + playerList[0].name + " and " + playerList[1].name)
 
             elif gameState == GameStates.BATTLE_START:
                 for id, player in enumerate(playerList):
                     # Must strip out any spaces or new lines
                     opponentName = str(player.opponentName).strip()
-                    print("Flag 18")
-                    print(opponentName)
+                    # print("Flag 18")
+                    # print(opponentName)
 
                     # Build the opponent found message
                     opponentFoundMessage = "An opponent has been found! {} has challenged you to a battle!".format(opponentName)
@@ -130,9 +199,16 @@ while True:
                     # Send the message telling them an opponent has been found
                     server.sendMessageToClientById(player.clientId, opponentFoundMessage)
 
-                    # Tell the player what Pokémon they send out
+                    # Load the oppsoing trainer so you can load their active Pokemon
+                    opposingTrainer = getPlayerByPlayerId(player.opponentId)
 
-                    # Tell the player what Pokémon their opponent sends out
+                    # Tell the player what Pokemon their opponent sends out
+                    opponentPokemonMessage = "Opponent {} sends out {}.".format(opposingTrainer.name, opposingTrainer.activePokemon)
+                    server.sendMessageToClientById(player.clientId, opponentPokemonMessage)
+
+                    # Tell the player what Pokemon they send out
+                    trainerPokemonMessage = "You send out {}. Go {}!".format(player.activePokemon. player.activePokemon)
+                    server.sendMessageToClientById(player.clientId, opponentPokemonMessage)
 
                     # Change state
                     gameState = GameStates.ACCEPT_COMMANDS
