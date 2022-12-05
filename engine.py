@@ -39,7 +39,7 @@ while True:
             print("Flag 1")
 
             # Create new player record 
-            newPlayer = Player(id, event.clientId, None, None)
+            newPlayer = Player(id, event.clientId, None, None, None)
 
             # Add to the map of players
             playerList.append(newPlayer)
@@ -76,79 +76,85 @@ while True:
             namePrompt = "Please enter your name with name command (ex: name Dan): "
             server.sendMessageToClientById(_client.id, namePrompt)
 
-        while bothPlayersEnteredName == False:
+        while True:
             # Wait a quarter of a second before executing the loop once more
             time.sleep(.25)    
 
             # Check for messages/disconnects
             server.update()
 
-            # Check commands 
-            for eventId, event in enumerate(server.getCommands()):
-                # Verify that clientId is in the list of clients 
-                if server.commandFromValidClient(event.clientId):
-                    # print("Flag 11") 
-                    # Only processing name commands at this time
-                    if event.command == "name":
-                        # print("Name command received ")
-                        clientIndex = server.getClientIndexById(event.clientId)
+            if gameState == GameStates.ACCEPT_NAMES:
+                # Check commands 
+                for eventId, event in enumerate(server.getCommands()):
+                    # Verify that clientId is in the list of clients 
+                    if server.commandFromValidClient(event.clientId):
+                        # Only processing name commands at this time
+                        if event.command == "name":
+                            # print("Name command received ")
+                            clientIndex = server.getClientIndexById(event.clientId)
 
-                        player = getPlayerByClientId(event.clientId)
+                            player = getPlayerByClientId(event.clientId)
 
-                        # Updating by index will be problematic for running after the first two clients
-                        player.name = event.params
-                        print("Client " + str(event.clientId) + " name is now: " + player.name)
-            
+                            print("Looking for player with clientId " + str(event.clientId))
+                            print("Player Id: " + str(player.id) + " is Client Id " + str(player.clientId))
 
-            if playerList[0].name != None and playerList[1].name != None:
-                print("Both players have entered their name: " + playerList[0].name + " and " + playerList[1].name)
-                bothPlayersEnteredName = True
+                            if player != None:
+                                # Updating by index will be problematic for running after the first two clients
+                                player.name = str(event.params).strip()
+                                print("Client " + str(event.clientId) + " name is now: " + player.name)
+                            else:
+                                print("ERROR: Cannot find player for Client Id " + event.clientId)
 
-            pass
+                if playerList[0].name != None and playerList[1].name != None:
+                    # Set opponent names for the clients
+                    playerList[0].opponentName = playerList[1].name
+                    playerList[0].opponentId = playerList[1].id
+                    playerList[1].opponentName = playerList[0].name
+                    playerList[1].opponentId = playerList[0].id
 
-        # Set opponent names for the clients
-        playerList[0].opponentName = playerList[1].name
-        playerList[1].opponentName = playerList[0].name
-        
-        for id, player in enumerate(playerList):
-            # Must strip out any spaces or new lines
-            opponentName = str(player.opponentName).strip()
-            print("Flag 18")
-            print(opponentName)
+                    gameState = GameStates.BATTLE_START
 
-            # Build the opponent found message
-            opponentFoundMessage = "An opponent has been found! {} has challenged you to a battle!".format(opponentName)
-            print(opponentFoundMessage)
+                    print("Both players have entered their name: " + playerList[0].name + " and " + playerList[1].name)
 
-            # Send the message telling them an opponent has been found
-            server.sendMessageToClientById(player.clientId, opponentFoundMessage)
+            elif gameState == GameStates.BATTLE_START:
+                for id, player in enumerate(playerList):
+                    # Must strip out any spaces or new lines
+                    opponentName = str(player.opponentName).strip()
+                    print("Flag 18")
+                    print(opponentName)
 
-        # Game loop
-        while True:
-            # Display information the users about battle
-            
+                    # Build the opponent found message
+                    opponentFoundMessage = "An opponent has been found! {} has challenged you to a battle!".format(opponentName)
+                    print(opponentFoundMessage)
 
-            # Accept commands for the turn of the battle
+                    # Send the message telling them an opponent has been found
+                    server.sendMessageToClientById(player.clientId, opponentFoundMessage)
 
-            # Display waiting message to client after they submit commands
+                    # Tell the player what Pokémon they send out
 
-            # Once both clients submit their commands, calculate what occurs on the turn
+                    # Tell the player what Pokémon their opponent sends out
 
-            # Return information to the user
+                    # Change state
+                    gameState = GameStates.ACCEPT_COMMANDS
+                pass
+            elif gameState == GameStates.ACCEPT_COMMANDS:
+                # Accept commands from the players for this turn 
+                pass
+            elif gameState == GameStates.CALCULATE_RESULT:
+                # Determine the results of this turn
+                pass
+            elif gameState == GameStates.DISPLAY_RESULT:
+                # Display the Results of the turn to the user
 
-            # Check for an end condition
+                # Determine if the battle will continue
+                # Battle will continue Set the state to ACCEPT_COMMANDS
 
-            # If not end condition, let the loop continue
+                # Battle has met an end condition, set to END_BATTLE
+                pass
+            elif gameState == GameStates.END_BATTLE:
+                pass
+            else:
+                print("ERROR: Invalid game state provided: " + str(gameState))
 
-            # End condition met, time to end the battle
-            # Display end info
-            # PERHAPS IF I HAVE TIME ALLOW BOTH USERS TO DECIDE TO BATTLE AGAIN
-            # Once battle is over time to display final message and end connction
-
-            # Listen for commands/disconnects
-
-            pass
-
-        pass
     else:
-        print("ERROR: Invalid state provided: " + server.state)
+        print("ERROR: Invalid state provided: " + str(server.state))

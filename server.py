@@ -192,15 +192,16 @@ class Server(object):
                     # Process the received message
                     processedMessage = self.processReceivedData(_client, rawData)
 
-                    # Separate the command and the parameter(s) out
-                    # First string is command, all the rest would be parameters
-                    command, params = (processedMessage.split(" ", 1) + ["", ""])[:2]
+                    if processedMessage != None:
+                        # Separate the command and the parameter(s) out
+                        # First string is command, all the rest would be parameters
+                        command, params = (processedMessage.split(" ", 1) + ["", ""])[:2]
 
-                    # Create new event object
-                    event = Event(Event._EVENT_COMMAND, _client.id, command.lower(), params)
+                        # Create new event object
+                        event = Event(Event._EVENT_COMMAND, _client.id, command.lower(), params)
 
-                    # Add the command/params to list of new events
-                    self.newEventList.append(event)
+                        # Add the command/params to list of new events
+                        self.newEventList.append(event)
 
                 except socket.error:
                     self.disconnectClient(_client.id)
