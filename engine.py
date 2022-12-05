@@ -64,13 +64,13 @@ while True:
             for eventId, event in enumerate(server.getCommands()):
                 # Verify that clientId is in the list of clients 
                 if server.commandFromValidClient(event.clientId):
-                    print("Flag 11") 
+                    # print("Flag 11") 
                     # Only processing name commands at this time
                     if event.command == "name":
-                        print("Name command received ")
+                        # print("Name command received ")
                         clientIndex = server.getClientIndexById(event.clientId)
 
-                        print("Flag 12 " + str(clientIndex))
+                        # print("Flag 12 " + str(clientIndex))
 
                         # Updating by index will be problematic for running after the first two clients
                         server.clientList[clientIndex].name = event.params
@@ -90,12 +90,19 @@ while True:
         server.clientList[0].opponentName = server.clientList[1].name
         server.clientList[1].opponentName = server.clientList[0].name
         
-        for _client in server.clientList.items():
+        for id, _client in list(server.clientList.items()):
+            opponentName = str(_client.opponentName).strip()
+            print("Flag 18")
+            print(opponentName)
+
             # Build the opponent found message
-            opponentFoundMessage = "An opponent has been found! " + _client.opponentName + " has challenged you to a battle!" 
+            # opponentFoundMessage = "An opponent has been found! {} has challenged you to a battle!".format(_client.opponentName) 
+            opponentFoundMessage = "An opponent has been found! {} has challenged you to a battle!".format(opponentName)
+            print("Flag 17")
+            print(opponentFoundMessage)
 
             # Send the message telling them an opponent has been found
-            server.sendMessageToClientById(_client, opponentFoundMessage)
+            server.sendMessageToClientById(_client.id, opponentFoundMessage)
 
         # Game loop
         while True:

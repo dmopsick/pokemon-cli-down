@@ -11,7 +11,7 @@ TELNET_IP = "127.0.0.1" # Local IP address for testing locally on one machine
 TELNET_PORT = 1234
 
 TELNET_NEW_LINE = "\n\r"
-TELNET_MESSAGE_MAX_LENGTH = 256 # Do need long messages here
+TELNET_MESSAGE_MAX_LENGTH = 4096 # Do need long messages here
 
  # The server itself that will run the Pokémon battle simulator
 class Server(object):
@@ -144,9 +144,14 @@ class Server(object):
         # Add new line to end of the message for printing neater
         message = message + TELNET_NEW_LINE
 
+        print("Flag 16")
+        print(message)
+
+        clientIndex = self.getClientIndexById(clientId)
+
         try:
             # Load the client we are going to send the message to
-            clientToSendMessageTo = self.clientList[clientId]
+            clientToSendMessageTo = self.clientList[clientIndex]
 
             clientToSendMessageTo.socket.sendall(bytearray(message, "latin1"))
 
@@ -262,5 +267,5 @@ class Server(object):
         for id, client in list(self.clientList.items()):
             if clientId == client.id:
                 index = id
-                
+
         return index 
