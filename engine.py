@@ -51,6 +51,10 @@ while True:
 
         # Game loop
         while True:
+            # Check for disconnected player
+
+            # Accept commands from players
+
             # Display information the users about battle
 
             # Accept commands for the turn of the battle

@@ -1,6 +1,6 @@
 import socket
 from utils import ServerStates
-import utils
+from event import Event
 import select
 import client
 import time
@@ -13,22 +13,22 @@ TELNET_PORT = 1234
 TELNET_NEW_LINE = "\n\r"
 TELNET_MESSAGE_MAX_LENGTH = 256 # Do need long messages here
 
-# Read state values to allow for processing of client data via telnet as laid out in the example linked on GitHub | http://pcmicro.com/netfoss/telnet.html
-# Taken directly from GitHub MUD project reference | https://github.com/Frimkron/mud-pi/blob/a152f20516cde03411db4015211e3d3b64c8d883/mudserver.py
-_READ_STATE_NORMAL = 1
-_READ_STATE_COMMAND = 2
-_READ_STATE_SUBNEG = 3
-_TN_INTERPRET_AS_COMMAND = 255
-_TN_ARE_YOU_THERE = 246
-_TN_WILL = 251
-_TN_WONT = 252
-_TN_DO = 253
-_TN_DONT = 254
-_TN_SUBNEGOTIATION_START = 250
-_TN_SUBNEGOTIATION_END = 240
-
  # The server itself that will run the Pokémon battle simulator
 class Server(object):
+
+    # Read state values to allow for processing of client data via telnet as laid out in the example linked on GitHub | http://pcmicro.com/netfoss/telnet.html
+    # Taken directly from GitHub MUD project reference | https://github.com/Frimkron/mud-pi/blob/a152f20516cde03411db4015211e3d3b64c8d883/mudserver.py
+    _READ_STATE_NORMAL = 1
+    _READ_STATE_COMMAND = 2
+    _READ_STATE_SUBNEG = 3
+    _TN_INTERPRET_AS_COMMAND = 255
+    _TN_ARE_YOU_THERE = 246
+    _TN_WILL = 251
+    _TN_WONT = 252
+    _TN_DO = 253
+    _TN_DONT = 254
+    _TN_SUBNEGOTIATION_START = 250
+    _TN_SUBNEGOTIATION_END = 240
 
     def __init__(self):
         # Build and start the server
@@ -37,6 +37,8 @@ class Server(object):
         # Init some variables
         self.clientList = {}
         self.nextClientId = 0 # Next Id to assign to client as they connect
+        self.eventList = []
+        self.newEventList = [] # How does this get processed?
 
         # Create socket to listen for clients
         self.listeningSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -61,7 +63,28 @@ class Server(object):
         print("Listening at " + TELNET_IP + ":" + str(TELNET_PORT))
 
     def update(self):
-        pass
+        # Check if one or more clients disconnected
+        
+        # Check for any new messages from the clients to be processed as commands
+        self.receiveMessagesFromClients()
+
+        # Replace the existing events list with the new events taken in this cycle
+        # No longer need the old event list
+        self.eventList = list(self.newEventList)
+
+        # Reset the new event list
+        self.newEventList = []
+
+    def getCommands(self):
+        commandList = []
+
+        # Iterate through the list of events 
+        for event in self.eventList:
+            # If the event is command, add it to the command list
+            if event.eventType == Event._EVENT_COMMAND:
+                commandList.append(event)
+
+        return commandList
 
     # Check for a new client connecting to the game server
     def checkNewConnections(self):
@@ -110,6 +133,13 @@ class Server(object):
             # print("NO DATA AVAILABLE TO READ")
             return
 
+    def disconnectClient(self, clientId):
+        # Remove the client from the client map
+        del(self.clientList[clientId])
+
+        # Do we need to do something here? 
+        # In the example they add a player left to new events list... but how is that handled and where
+
     def sendMessageToClientById(self, clientId, message):
         # Add new line to end of the message for printing neater
         message = message + TELNET_NEW_LINE
@@ -126,7 +156,7 @@ class Server(object):
         except socket.error:
             # Disconnect the socket if something goes wrong
             print("ERROR: Unable to send to socket associated with client Id: " + str(clientId))
-            pass 
+            self.disconnectClient(clientId) 
 
     def receiveMessagesFromClients(self):
         # Iterate through each of the clients currently connected
@@ -136,21 +166,27 @@ class Server(object):
 
             # Check if this client's associated socket appears in the read list of data
             if _client.socket in rlist:
-                # The client's socket appears, there is new data from this client
-                rawData = _client.socket.recv(TELNET_MESSAGE_MAX_LENGTH).decode("latin1")
+                try:
+                    # The client's socket appears, there is new data from this client
+                    rawData = _client.socket.recv(TELNET_MESSAGE_MAX_LENGTH).decode("latin1")
 
-                # Process the received message
-                
+                    # Process the received message
+                    processedMessage = self.processReceivedData(_client, rawData)
 
+                    # Separate the command and the parameter(s) out
+                    # First string is command, all the rest would be parameters
+                    command, params = (processedMessage.split(" ", 1) + ["", ""])[:2]
 
+                    # Create new event object
+                    event = Event(Event._EVENT_COMMAND, _client.id, command.lower(), params)
 
-                pass
+                    # Add the command/params to list of new events
+                    self.newEventList.append(event)
 
+                except socket.error:
+                    self.disconnectClient(_client.id)
 
             # If it does not appear that means there is no data from this client
-            pass
-        
-        pass
 
     # Taken directly from GitHub MUD project reference | https://github.com/Frimkron/mud-pi/blob/a152f20516cde03411db4015211e3d3b64c8d883/mudserver.py
     def processReceivedData(self, client, data):
@@ -161,11 +197,12 @@ class Server(object):
 
         # Iterate through the received data one character at a time
         for char in data:
+            # Handle the read state
             if readState == self._READ_STATE_NORMAL:
                 # Check if the character is a special command
                 # This command means 'interpret as command'
                 if ord(char) == self._TN_INTERPRET_AS_COMMAND:
-                    state = self._READ_STATE_COMMAND
+                    readState = self._READ_STATE_COMMAND
                 # Check for new line character... that will be end of message
                 elif char == "\n":
                     processedMessage = client.buffer
@@ -179,15 +216,20 @@ class Server(object):
                 else:
                     # No special command at this time, add character to buffer
                     client.buffer += char
-
+            # Handle the command state
             elif readState == self._READ_STATE_COMMAND:
-                pass
-            elif readState == self._READ_STATE_SUBMEG:
-                pass
+                if ord(char) == self._TN_SUBNEGOTIATION_START:
+                    readState = self._READ_STATE_SUBNEG
+                
+                elif ord(char) in (self._TN_WILL, self._TN_WONT, self._TN_DO, self._TN_DONT):
+                    readState = self._READ_STATE_COMMAND
+                
+                else:
+                    readState = self._READ_STATE_NORMAL
 
-            
-            pass
+            #Handle the Subnegotiation state
+            elif readState == self._READ_STATE_SUBNEG:
+                if ord(char) == self._TN_SUBNEGOTIATION_END:
+                    readState = self._READ_STATE_NORMAL
 
         return processedMessage
-
-

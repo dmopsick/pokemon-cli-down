@@ -7,4 +7,4 @@ class Client:
         self.addr = addr # IP Address of the client
         self.bufffer = buffer # Holds data sent from the client 
         self.lastChecked = lastChecked # Last time we checked to confirm client still connected
-        self.name = name
+        self.name = name # Name of the client
