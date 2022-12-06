@@ -9,6 +9,11 @@ from move import Move
 from pokemon import Pokemon
 import random
 
+# List of commands
+_COMMAND_EXIT = "exit"
+_COMMAND_NAME = "name"
+_COMMAND_MOVE = "move"
+
 # Start the server
 server = Server()
 
@@ -17,6 +22,10 @@ playerList = []
 
 # Init the game state
 gameState = GameStates.CLOSED
+
+# Handle the requested exit of a player from the server
+def disconnectPlayer(player):
+    pass
 
 def getPlayerByClientId(clientId):
     foundPlayer = None
@@ -282,7 +291,7 @@ while True:
                     # Verify that clientId is in the list of clients 
                     if server.commandFromValidClient(event.clientId):
                         # Only processing name commands at this time
-                        if event.command == "name":
+                        if event.command == _COMMAND_NAME:
                             clientIndex = server.getClientIndexById(event.clientId)
 
                             player = getPlayerByClientId(event.clientId)
@@ -384,7 +393,7 @@ while True:
                     # Ensure the command is from a valid client 
                     if server.commandFromValidClient(event.clientId):
                         # Check for a move command issued
-                        if event.command == "move":
+                        if event.command == _COMMAND_MOVE:
                             selectedMove = None
 
                             # Load player associated with this event
