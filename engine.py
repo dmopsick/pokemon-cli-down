@@ -35,7 +35,16 @@ def getPlayerByPlayerId(playerId):
 
     return foundPlayer
 
-# Taken from the Pokemon GO section of https://bulbapedia.bulbagarden.net/wiki/Damage
+def getNumRemainingPokemon(player):
+    count = 0
+
+    for id, pokemon in enumerate(player.pokemonTeam):
+        if pokemon.currentHp > 0:
+            count += 1
+
+    return count
+
+# Taken from the Generation 5 section of https://bulbapedia.bulbagarden.net/wiki/Damage
 # With the spice of the slight random from core series games
 def calculateDamage(attackingPokemon, defendingPokemon, move):
     atkForCalculation = 0
@@ -52,9 +61,11 @@ def calculateDamage(attackingPokemon, defendingPokemon, move):
         defForCalculation = defendingPokemon.spDef
 
     # Use the formula from Bulbapedia for Pokemon GO for simplicity sake
-    calculatedDamage = (0.5 * move.power * (atkForCalculation / defForCalculation) * modifier * randomDamageModifier) +1
+    # calculatedDamage = (0.5 * move.power * (atkForCalculation / defForCalculation) * modifier * randomDamageModifier) +1
+    rawDamage = ( ((2 * attackingPokemon.level / 5) + 2) * move.power * atkForCalculation / defForCalculation + 2) / 50 * randomDamageModifier
 
-    # Do we need to round it to nearest 1?
+    # Round to nearest 1
+    calculatedDamage = round(rawDamage)
 
     return calculatedDamage
 
@@ -66,27 +77,106 @@ def playerHasRemainingPokemon(player):
     result = False
 
     # Check for at least one Pokemon in the player's team with remaining HP
-    for id, pokemon in player.pokemonTeam:
+    for id, pokemon in enumerate(player.pokemonTeam):
         if pokemon.currentHp > 0:
             result=True
 
     return result
 
 def executePlayerOneAttack():
-    pass
+    # Announce to both players what move has been used
+    sendMessageToBothPlayers("{} uses {}!".format(playerList[0].activePokemon.speciesName, playerList[0].mostRecentMoveCommand.name))
+    time.sleep(0.5)
 
+    # Select a random int from 1-100 for accuracy check
+    accuracyRandomInt = random.randint(1, 100)
+    # Check if the move will hit
+    if accuracyRandomInt < playerList[0].mostRecentMoveCommand.accuracy:
+        # Calculate damage done by this move
+        damage = calculateDamage(playerList[0].activePokemon, playerList[1].activePokemon, playerList[0].mostRecentMoveCommand)
+
+        print("Calculated damage " + str(damage))
+
+        # Apply the damage to the defending pokemon 
+        playerList[1].activePokemon.currentHp -= damage 
+
+        # Does the defending Pokemon have any remaining hp?
+        if (playerList[1].activePokemon.currentHp > 0):
+            sendMessageToBothPlayers("{} received {} points of damage! {} has {} HP remaining".format(playerList[1].activePokemon.speciesName, damage, playerList[1].activePokemon.speciesName, playerList[1].activePokemon.currentHp))
+            time.sleep(.5)
+
+        else:
+            playerList[1].activePokemon.currentHp = 0
+                # Let the players know 
+            sendMessageToBothPlayers("{} has been knocked out by the attack!".format(playerList[1].activePokemon.speciesName))
+            time.sleep(0.5)
+
+    else:
+        # The move missed -- No damage will be done 
+        # Announce to both players what move has been used
+        sendMessageToBothPlayers("{} avoided the attack!".format(playerList[1].activePokemon.speciesName))
+        time.sleep(.5)
+    # Decrement the PP of the used move on the attacking active Pokemon
+    for id, move in enumerate(playerList[0].activePokemon.moveList):
+        if move.id == playerList[0].mostRecentMoveCommand.id:
+            # Decerement the PP
+            move.currentPp -= 1
+            break
+
+    # The command has been issued, set most recent command to null
+    playerList[0].mostRecentMoveCommand = None
+        
 def executePlayerTwoAttack():
-    pass
+    # Announce to both players what move has been used
+    sendMessageToBothPlayers("{} uses {}!".format(playerList[1].activePokemon.speciesName, playerList[1].mostRecentMoveCommand.name))
+    time.sleep(0.5)
+
+    # Select a random int from 1-100 for accuracy check
+    accuracyRandomInt = random.randint(1, 100)
+    # Check if the move will hit
+    if accuracyRandomInt < playerList[1].mostRecentMoveCommand.accuracy:
+        # Calculate damage done by this move
+        damage = calculateDamage(playerList[1].activePokemon, playerList[0].activePokemon, playerList[1].mostRecentMoveCommand)
+
+        print("Calculated damage " + str(damage))
+
+        # Apply the damage to the defending pokemon 
+        playerList[0].activePokemon.currentHp -= damage 
+
+        # Does the defending Pokemon have any remaining hp?
+        if (playerList[0].activePokemon.currentHp > 0):
+            sendMessageToBothPlayers("{} received {} points of damage! {} has {} HP remaining".format(playerList[0].activePokemon.speciesName, damage, playerList[0].activePokemon.speciesName, playerList[0].activePokemon.currentHp))
+            time.sleep(.5)
+        else:
+            playerList[0].activePokemon.currentHp = 0
+            # Let the players know 
+            sendMessageToBothPlayers("{} has been knocked out by the attack!".format(playerList[0].activePokemon.speciesName))
+            time.sleep(0.5)
+    else:
+        # The move missed -- No damage will be done 
+        # Announce to both players what move has been used
+        sendMessageToBothPlayers("{} avoided the attack!".format(playerList[0].activePokemon.speciesName))
+        time.sleep(.5)
+
+    # Decrement the PP of the used move on the attacking active Pokemon
+    for id, move in enumerate(playerList[1].activePokemon.moveList):
+        if move.id == playerList[1].mostRecentMoveCommand.id:
+            # Decerement the PP
+            move.currentPp -= 1
+            break
+
+    # The command has been issued, set most recent command to null
+    playerList[1].mostRecentMoveCommand = None
 
 # Based on limited time and the focus of this project being the networking purposes, for the time being hardcode the Pokemon for the two players
 def hardCodeTestValues():
     # Create some moves for the Pokemon to use
-    tackle = Move(1, 'Tackle', 'Normal', 35, 35, 40, 100)
-    scratch = Move(2, 'Scratch', 'Normal', 35, 35, 40, 100)
-    razorLeaf = Move(3, 'Razor Leaf', 'Grass', 25, 25, 55, 95)
-    bite = Move(4, 'Bite', 'Dark', 25, 25, 60, 100)
-    vineWhip = Move(5, 'Vine Whip', 'Grass', 25, 25, 45, 100)
-    headbutt = Move(6, 'Headbutt', 'Normal', 15, 15, 70, 100)
+    tackle = Move(1, 'Tackle', 'Normal', 35, 35, 40, 100, True)
+    scratch = Move(2, 'Scratch', 'Normal', 35, 35, 40, 100, True)
+    razorLeaf = Move(3, 'Razor Leaf', 'Grass', 25, 25, 55, 95, True)
+    bite = Move(4, 'Bite', 'Dark', 25, 25, 60, 100, True)
+    vineWhip = Move(5, 'Vine Whip', 'Grass', 25, 25, 45, 100, True)
+    headbutt = Move(6, 'Headbutt', 'Normal', 15, 15, 70, 100,True )
 
     # Set the move list for Treeko
     treekoMoveList = []
@@ -155,16 +245,14 @@ while True:
             # If so the connections have been established and the battle can begin
             server.state = ServerStates.ESTAB
 
-            # Let both of the users know that a connection with two clients has been established
-             
         elif len(server.clientList) == 1:
-            print("1 client is connected to the server")
+            # print("1 client is connected to the server")
             pass
         elif len(server.clientList) > 2:
-            print("WARNING: There are " + str(len(server.clientList)) + " connections detected.")
+            # print("WARNING: There are " + str(len(server.clientList)) + " connections detected.")
             pass
         else:
-            print("No clients are connected to the server")
+            # print("No clients are connected to the server")
             pass
         
     elif server.state == ServerStates.ESTAB:
@@ -208,7 +296,7 @@ while True:
                                 print("Client " + str(event.clientId) + " name is now: " + player.name)
 
                                 # Let user know their name has been recorded
-                                nameConfirmation = "Your name is now confirmed, {}.".format(player.name)
+                                nameConfirmation = "Your name is confirmed, {}.".format(player.name)
                                 server.sendMessageToClientById(event.clientId, nameConfirmation)
                             else:
                                 print("ERROR: Cannot find player for Client Id " + event.clientId)
@@ -315,13 +403,20 @@ while True:
                                 print("ERROR: Invalid param passed in for move")
 
                             if selectedMove != None:
-                                # A valid move has been selected, update player model
-                                player.mostRecentMoveCommand = selectedMove
+                                # Verify that the selected move has pp left
+                                if selectedMove.currentPp > 0:
+                                    # A valid move has been selected, update player model
+                                    player.mostRecentMoveCommand = selectedMove
 
-                                # Let player know their move was succesfuly registered
-                                moveReceived = "Your move has been submitted. Waiting for your opponent..."
-                                server.sendMessageToClientById(player.clientId, moveReceived)
-
+                                    # Let player know their move was succesfuly registered
+                                    moveReceived = "Your move has been submitted. Waiting for your opponent..."
+                                    server.sendMessageToClientById(player.clientId, moveReceived)
+                                
+                                else:
+                                    # TODO change this to an elif to make sure that the Pokemon has pp in at least one other move
+                                    # If there is no PP in any moves, then the Pokemon can only Struggle
+                                    server.sendMessageToClientById(player.clientId, "{} has no PP left, select another move")
+      
                             else:
                                 # Let player know their move was not registered and let them know proper syntax
                                 moveFailedToReceive = "Your move was not submitted. Use syntax `move 1` to select the first move from the list"
@@ -329,81 +424,96 @@ while True:
 
                 # Check if both players have given a command this turn
                 if playerList[0].mostRecentMoveCommand != None and playerList[1].mostRecentMoveCommand != None:
-                    # Let both users know that moves have been made
-                    print("Both moves received")
+                    # Both users have made their moves, now to execute them
                     gameState = GameStates.CALCULATE_RESULT
             elif gameState == GameStates.CALCULATE_RESULT:
                 # Determine the results of this turn
-                print("IT IS TIME TO CALCULATE THE RESULT OF THE TWO ENTERED MOVES")
-
                 # Check which active Pokemon has a higher speed stat, they move first
                 if playerList[0].activePokemon.speed > playerList[1].activePokemon.speed:
-                    # Player 1 has the faster Pokémon so they will go first
-                    # Announce to both players what move has been used
-                    sendMessageToBothPlayers("{} uses {}!".format(playerList[0].activePokemon.speciesName, playerList[0].mostRecentMoveCommand))
-                    time.sleep(0.5)
-
-                    # Select a random int from 1-100 for accuracy check
-                    accuracyRandomInt = random.randint(1, 100)
-                    # Check if the move will hit
-                    if accuracyRandomInt < playerList[0].mostRecentMoveCommand.accuracy:
-                        # Calculate damage done by this move
-                        damage = calculateDamage(playerList[0].activePokemon, playerList[1].activePokemon, playerList[0].mostRecentMoveCommand)
-
-                        print("Calculated damage " + str(damage))
-
-                        # Apply the damage to the defending pokemon 
-                        playerList[1].activePokemon.currentHp -= damage 
-  
-                    else:
-                        # The move missed -- No damage will be done 
-                        # Announce to both players what move has been used
-                        sendMessageToBothPlayers("{} avoided the attack!".format(playerList[1].activePokemon.speciesName))
-                        time.sleep(.5)
-                    # Decrement the PP of the used move on the attacking active Pokemon
-                    for id, move in playerList[0].activePokemon.moveList:
-                        if move.id == playerList[0].mostRecentMoveCommand.id:
-                            # Decerement the PP
-                            move.currentPp -= 1
-                            break
-
-                    # The command has been issued, set most recent command to null
-                    playerList[0].mostRecentMoveCommand = None
-
-                    # Does the defending Pokemon have any remaining hp?
-                    if (playerList[1].activePokemon.currentHp > 0):
-                        sendMessageToBothPlayers("{} received {} points of damage! {} has {} HP remaining".format(playerList[1].activePokemon.speciesName, damage, playerList[1].activePokemon.speciesName, playerList[1].activePokemon.currentHp))
-                        time.sleep(.5)
-
-
-                        # Yes? Time for second attack
-
-                    else:
-                        playerList[1].activePokemon.currentHp = 0
-                         # Let the players know 
-                        sendMessageToBothPlayers("{} has been knocked out by the attack!")
-                        time.sleep(0.5)
-                       
+                    # Player 1 attacks
+                    executePlayerOneAttack()
 
                     # Check if the defending player has any other remaining Pokemon
                     if playerHasRemainingPokemon(playerList[1]) == False:
                         gameState = GameStates.END_BATTLE
                         playerList[0].battleWinner = True
-                    
+                    else:
+                        # Player 2 attacks
+                        executePlayerTwoAttack()
+
+                        # Check if the defending player has any other remaining Pokemon
+                        if playerHasRemainingPokemon(playerList[0]) == False:
+                            gameState = GameStates.END_BATTLE
+                            playerList[1].battleWinner = True
+                        else:
+                            # Reset the loop to accept another round of commands
+                            gameState = GameStates.DISPLAY_COMMANDS
+
                 else:
                     # Player 2 has the faster Pokémon so they will go first
+                    executePlayerTwoAttack()
 
+                    # Check if the defending player has any other remaining Pokemon
+                    if playerHasRemainingPokemon(playerList[0]) == False:
+                        gameState = GameStates.END_BATTLE
+                        playerList[1].battleWinner = True
+                    else:
+                        # Player 1 attacks
+                        executePlayerOneAttack()
 
+                        # Check if the defending player has any other remaining Pokemon
+                        if playerHasRemainingPokemon(playerList[1]) == False:
+                            gameState = GameStates.END_BATTLE
+                            playerList[0].battleWinner = True
+                        else:
+                            # Reset the loop to accept another round of commands
+                            gameState = GameStates.DISPLAY_COMMANDS
 
-                    # Perform the first Pokemon's attack
-
-                    # Check for end condition, if not met 
-
-                    # Perform the second attack
-
-                    pass
             elif gameState == GameStates.END_BATTLE:
-                pass
+                if playerList[0].battleWinner:
+                    # Notify the winner
+                    server.sendMessageToClientById(playerList[0].clientId, "{} is out of usable Pokemon...".format(playerList[1].name))
+                    time.sleep(0.5)
+                    server.sendMessageToClientById(playerList[0].clientId, "You have won the battle {} to {} against {}. Congratulations!".\
+                        format(playerList[1].name, getNumRemainingPokemon(playerList[0]), getNumRemainingPokemon(playerList[1]), playerList[1].name))
+
+                    # Notify the loser
+                    server.sendMessageToClientById(playerList[1].clientId, "You are out of usable Pokemon...")
+                    time.sleep(0.5)
+                    server.sendMessageToClientById(playerList[1].clientId, "{} wins the battle {} to {}. Better luck next time.".\
+                        format(playerList[0].name, getNumRemainingPokemon(playerList[0]), getNumRemainingPokemon(playerList[1]), playerList[0].name))
+                else:
+                     # Notify the winner
+                    server.sendMessageToClientById(playerList[1].clientId, "{} is out of usable Pokemon...".format(playerList[0].name))
+                    time.sleep(0.5)
+                    server.sendMessageToClientById(playerList[1].clientId, "You have won the battle {} to {} against {}. Congratulations!".\
+                        format(playerList[0].name, getNumRemainingPokemon(playerList[1]), getNumRemainingPokemon(playerList[0]), playerList[0].name))
+
+                    # Notify the loser
+                    server.sendMessageToClientById(playerList[0].clientId, "You are out of usable Pokemon...")
+                    time.sleep(0.5)
+                    server.sendMessageToClientById(playerList[0], "You have won the battle {} to {} against {}. Congratulations!".\
+                        format(getNumRemainingPokemon(playerList[1]), getNumRemainingPokemon(playerList[0]), playerList[1].name))
+
+                sendMessageToBothPlayers("Thank you for playing Pokemon CLIDown.")
+
+                # Game is now over, put the game to the closed state
+                gameState = GameStates.CLOSED
+
+            elif gameState == GameStates.CLOSED:
+                # Empty the player info
+                playerList = []
+
+                # Disconnect both clients
+                for id, client in list(server.clientList.items()):
+                    server.disconnectClient(client.id)
+                    client.socket.close()
+
+                # Close the server
+                server.state = ServerStates.CLOSED
+
+                # Break out of this nested game loop 
+                break
             else:
                 print("ERROR: Invalid game state provided: " + str(gameState))
 

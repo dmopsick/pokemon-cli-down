@@ -277,8 +277,9 @@ class Server(object):
     def commandFromValidClient(self, clientId):
         validCommand = False
         
-        if clientId == self.clientList[0].id or clientId == self.clientList[1].id:
-            validCommand = True
+        for id, client in list(self.clientList.items()):
+            if clientId == client.id:
+                validCommand = True
 
         return validCommand
 
