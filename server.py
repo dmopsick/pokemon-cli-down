@@ -194,10 +194,19 @@ class Server(object):
                     if processedMessage != None:
                         # Separate the command and the parameter(s) out
                         # First string is command, all the rest would be parameters
-                        command, params = (processedMessage.split(" ", 1) + ["", ""])[:2]
 
-                        # Create new event object
-                        event = Event(Event._EVENT_COMMAND, _client.id, command.lower(), params)
+                        # Check if there are any params
+                        if len(processedMessage.split()) > 1:
+                            # Command and args provided
+                            command, params = (processedMessage.split(" ", 1) + ["", ""])[:2]
+
+                            # Create new event object
+                            event = Event(Event._EVENT_COMMAND, _client.id, command.lower(), params)
+                        else:
+                            # No args provided, just a one word command
+                            command = processedMessage.strip()
+                            # Create new event object
+                            event = Event(Event._EVENT_COMMAND, _client.id, command.lower(), "")
 
                         # Add the command/params to list of new events
                         self.newEventList.append(event)
