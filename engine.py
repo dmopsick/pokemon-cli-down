@@ -9,6 +9,11 @@ from move import Move
 from pokemon import Pokemon
 import random
 
+# List of commands
+_COMMAND_EXIT = "exit"
+_COMMAND_NAME = "name"
+_COMMAND_MOVE = "move"
+
 # Start the server
 server = Server()
 
@@ -17,6 +22,11 @@ playerList = []
 
 # Init the game state
 gameState = GameStates.CLOSED
+
+# Handle the requested exit of a player from the server
+def disconnectPlayer(player):
+    gameState = GameStates.END_BATTLE
+    pass
 
 def getPlayerByClientId(clientId):
     foundPlayer = None
@@ -281,14 +291,15 @@ while True:
                 for eventId, event in enumerate(server.getCommands()):
                     # Verify that clientId is in the list of clients 
                     if server.commandFromValidClient(event.clientId):
+                        # print("Flag 5: " + event.command)
                         # Only processing name commands at this time
-                        if event.command == "name":
+                        if event.command == _COMMAND_NAME:
                             clientIndex = server.getClientIndexById(event.clientId)
 
                             player = getPlayerByClientId(event.clientId)
 
-                            print("Looking for player with clientId " + str(event.clientId))
-                            print("Player Id: " + str(player.id) + " is Client Id " + str(player.clientId))
+                            # print("Looking for player with clientId " + str(event.clientId))
+                            # print("Player Id: " + str(player.id) + " is Client Id " + str(player.clientId))
 
                             if player != None:
                                 # Updating by index will be problematic for running after the first two clients
@@ -300,6 +311,11 @@ while True:
                                 server.sendMessageToClientById(event.clientId, nameConfirmation)
                             else:
                                 print("ERROR: Cannot find player for Client Id " + event.clientId)
+                        elif event.command == _COMMAND_EXIT:
+                            # player = getPlayerByClientId(event.clientId)
+                            # For now just end the game if someone exits
+                            gameState = GameStates.END_BATTLE
+                            # disconnectPlayer(player)
 
                 if playerList[0].name != None and playerList[1].name != None:
                     # Set opponent names for the clients
@@ -384,7 +400,7 @@ while True:
                     # Ensure the command is from a valid client 
                     if server.commandFromValidClient(event.clientId):
                         # Check for a move command issued
-                        if event.command == "move":
+                        if event.command == _COMMAND_MOVE:
                             selectedMove = None
 
                             # Load player associated with this event
@@ -421,6 +437,15 @@ while True:
                                 # Let player know their move was not registered and let them know proper syntax
                                 moveFailedToReceive = "Your move was not submitted. Use syntax `move 1` to select the first move from the list"
                                 server.sendMessageToClientById(player.clientId, moveFailedToReceive)
+                        elif event.command == _COMMAND_EXIT:
+                            # player = getPlayerByClientId(event.clientId)
+                             # For now just end the game if someone exits
+                            gameState = GameStates.END_BATTLE
+                            # disconnectPlayer(player)
+                        else:
+                            # Let player know their move was not registered and let them know proper syntax
+                            moveFailedToReceive = "Invalid command entered. Use syntax `move 1` to select the first move from the list"
+                            server.sendMessageToClientById(player.clientId, moveFailedToReceive)    
 
                 # Check if both players have given a command this turn
                 if playerList[0].mostRecentMoveCommand != None and playerList[1].mostRecentMoveCommand != None:
@@ -482,7 +507,7 @@ while True:
                     time.sleep(0.5)
                     server.sendMessageToClientById(playerList[1].clientId, "{} wins the battle {} to {}. Better luck next time.".\
                         format(playerList[0].name, getNumRemainingPokemon(playerList[0]), getNumRemainingPokemon(playerList[1]), playerList[0].name))
-                else:
+                elif playerList[1].battleWinner:
                      # Notify the winner
                     server.sendMessageToClientById(playerList[1].clientId, "{} is out of usable Pokemon...".format(playerList[0].name))
                     time.sleep(0.5)
@@ -494,7 +519,10 @@ while True:
                     time.sleep(0.5)
                     server.sendMessageToClientById(playerList[0], "You have won the battle {} to {} against {}. Congratulations!".\
                         format(getNumRemainingPokemon(playerList[1]), getNumRemainingPokemon(playerList[0]), playerList[1].name))
-
+                else:
+                    sendMessageToBothPlayers("One or more players has disconnected from the server.")
+                    time.sleep(0.5)
+                    
                 sendMessageToBothPlayers("Thank you for playing Pokemon CLIDown.")
 
                 time.sleep(1)
