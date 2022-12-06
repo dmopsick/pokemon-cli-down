@@ -83,14 +83,10 @@ class Server(object):
 
         # Iterate through the list of events 
         for id, event in enumerate(self.eventList):
-            print("Flag 5")
             print(event.command + " " + event.params)
             # If the event is command, add it to the command list
             if event.eventType == Event._EVENT_COMMAND:
                 commandList.append(event)
-
-        # print("Flag 4")
-        # print(commandList)
 
         return commandList
 

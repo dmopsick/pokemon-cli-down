@@ -338,7 +338,6 @@ while True:
                     # Tell the player what Pokemon their opponent sends out
                     opponentPokemonMessage = "Opponent {} sends out {}.".format(opposingTrainer.name, opposingTrainer.activePokemon.speciesName)
                     server.sendMessageToClientById(player.clientId, opponentPokemonMessage)
-
                     time.sleep(.5) 
 
                     # Tell the player what Pokemon they send out
