@@ -6,8 +6,8 @@ import client
 import time
 
 # Actual IP to use for the app
-# TELNET_IP = "0.0.0.0" # Wildcard to listen on any port possible
-TELNET_IP = "127.0.0.1" # Local IP address for testing locally on one machine
+TELNET_IP = "0.0.0.0" # Wildcard to listen on any port possible
+# TELNET_IP = "127.0.0.1" # Local IP address for testing locally on one machine
 TELNET_PORT = 1234
 
 TELNET_NEW_LINE = "\n\r"
@@ -62,6 +62,9 @@ class Server(object):
         print ("CLIDown server started...")
         print("Listening at " + TELNET_IP + ":" + str(TELNET_PORT))
 
+        if TELNET_IP == "0.0.0.0":
+            print("Check the server IP at https://whatismyipaddress.com/")
+
     def update(self):
         # Check for new connected clients
         self.checkNewConnections()
@@ -83,14 +86,10 @@ class Server(object):
 
         # Iterate through the list of events 
         for id, event in enumerate(self.eventList):
-            print("Flag 5")
             print(event.command + " " + event.params)
             # If the event is command, add it to the command list
             if event.eventType == Event._EVENT_COMMAND:
                 commandList.append(event)
-
-        # print("Flag 4")
-        # print(commandList)
 
         return commandList
 

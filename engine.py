@@ -497,6 +497,8 @@ while True:
 
                 sendMessageToBothPlayers("Thank you for playing Pokemon CLIDown.")
 
+                time.sleep(1)
+
                 # Game is now over, put the game to the closed state
                 gameState = GameStates.CLOSED
 
@@ -504,18 +506,21 @@ while True:
                 # Empty the player info
                 playerList = []
 
-                # Disconnect both clients
-                for id, client in list(server.clientList.items()):
-                    server.disconnectClient(client.id)
-                    client.socket.close()
-
-                # Close the server
-                server.state = ServerStates.CLOSED
+                # Signal the state to end the server
+                server.state = ServerStates.END
 
                 # Break out of this nested game loop 
                 break
             else:
                 print("ERROR: Invalid game state provided: " + str(gameState))
+    elif server.state == ServerStates.END:
+        # Disconnect both clients
+        for id, client in list(server.clientList.items()):
+            server.disconnectClient(client.id)
+            client.socket.close()
+
+        # Close the server
+        server.state = ServerStates.CLOSED
 
     else:
         print("ERROR: Invalid state provided: " + str(server.state))
