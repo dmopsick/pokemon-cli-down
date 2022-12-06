@@ -6,6 +6,7 @@ class ServerStates(Enum):
     ESTAB, END = range(1, 5)
 
 class GameStates(Enum):
-    BATTLE_START, DISPLAY_COMMANDS, \
+    BATTLE_START, ACCEPT_NAMES, \
+    DISPLAY_COMMANDS, \
     ACCEPT_COMMANDS, CALCULATE_RESULT, \
-    END_BATTLE, CLOSED, ACCEPT_NAMES = range(1, 8)
+    END_BATTLE, CLOSED, = range(1, 8)
