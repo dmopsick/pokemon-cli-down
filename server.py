@@ -59,7 +59,7 @@ class Server(object):
         # Set the server state to listening
         self.state = ServerStates.LISTEN
 
-        print ("CLIDown server started...")
+        print("CLIDown server started...")
         print("Listening at " + TELNET_IP + ":" + str(TELNET_PORT))
 
         if TELNET_IP == "0.0.0.0":
