@@ -20,6 +20,9 @@ server = Server()
 # Hold the player info
 playerList = []
 
+# Hold the player Ids to use
+nextPlayerId = 0
+
 # Init the game state
 gameState = GameStates.CLOSED
 
@@ -40,6 +43,7 @@ def getPlayerByPlayerId(playerId):
     foundPlayer = None
 
     for id, player in enumerate(playerList):
+        # print("Flag 11: " +  str(player.id) + ", " + player.name)
         if playerId == player.id:
             foundPlayer = player
 
@@ -105,7 +109,7 @@ def executePlayerOneAttack():
         # Calculate damage done by this move
         damage = calculateDamage(playerList[0].activePokemon, playerList[1].activePokemon, playerList[0].mostRecentMoveCommand)
 
-        print("Calculated damage " + str(damage))
+        # print("Calculated damage " + str(damage))
 
         # Apply the damage to the defending pokemon 
         playerList[1].activePokemon.currentHp -= damage 
@@ -148,7 +152,7 @@ def executePlayerTwoAttack():
         # Calculate damage done by this move
         damage = calculateDamage(playerList[1].activePokemon, playerList[0].activePokemon, playerList[1].mostRecentMoveCommand)
 
-        print("Calculated damage " + str(damage))
+        # print("Calculated damage " + str(damage))
 
         # Apply the damage to the defending pokemon 
         playerList[0].activePokemon.currentHp -= damage 
@@ -243,12 +247,15 @@ while True:
 
         for id, event in enumerate(server.getNewPlayers()):
             # Create new player record 
-            newPlayer = Player(id, event.clientId, None)
+            newPlayer = Player(nextPlayerId, event.clientId, None)
 
             # Add to the map of players
             playerList.append(newPlayer)
 
-            print("Flag 20 adding new player Id " + str(newPlayer.id) + " with client Id " + str(newPlayer.clientId))
+            # Increment next player id
+            nextPlayerId += 1
+
+            print("Adding new player Id " + str(newPlayer.id) + " with client Id " + str(newPlayer.clientId))
 
         # Check to see if there are now two clients
         if len(server.clientList) == 2:
@@ -374,7 +381,7 @@ while True:
 
                     # Tell the player the current status, HP of their opponent's Pokemon
                     opponentPokemonStatusMessage = "{0}'s Level {1} {2} has {3} / {4} HP remaining.".format(opposingTrainer.name, str(opposingTrainer.activePokemon.level), opposingTrainer.activePokemon.speciesName, \
-                        opposingTrainer.activePokemon.currentHp, str(opposingTrainer.activePokemon.maxHp))
+                        str(opposingTrainer.activePokemon.currentHp), str(opposingTrainer.activePokemon.maxHp))
                     server.sendMessageToClientById(player.clientId, opponentPokemonStatusMessage)
 
                     # Tell the player the current status, HP of their Pokemon
